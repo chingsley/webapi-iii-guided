@@ -19,14 +19,14 @@ server.use(morgan('dev'))
 //   next();
 // });
 server.use(typeLogger);
-server.use(addName);
+// server.use(addName);
 // server.use(lockout);
-server.use(moodyGatekeeper);
+// server.use(moodyGatekeeper);
 
 server.use('/api/hubs', hubsRouter);
 
-server.get('/', (req, res) => {
-  const nameInsert = (req.name) ? ` ${req.name}` : '';
+server.get('/', addName, (req, res) => {
+  const nameInsert = (req.currentUserName) ? ` ${req.currentUserName}` : '';
 
   res.send(`
     <h2>Lambda Hubs API</h2>
@@ -41,7 +41,8 @@ function typeLogger(req, res, next) {
 }
 
 function addName(req, res, next) {
-  req.name = req.name || "Cassandra";
+  console.log('req = ', req);
+  req.currentUserName = req.currentUserName || "Cassandra";
   next();
 }
 
@@ -61,5 +62,13 @@ function moodyGatekeeper(req, res, next) {
     next();
   }
 }
+
+// we want this immediately before our export 
+server.use((err, req, res, next) => {
+  res.status(500).json({
+    message: "Bad panda",
+    err
+  });
+});
 
 module.exports = server;

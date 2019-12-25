@@ -1,4 +1,5 @@
 const db = require('../data/dbConfig.js')
+const { myLogger } = require('../myLogger');
 
 module.exports = {
   find,
@@ -39,10 +40,13 @@ function remove(id) {
     .del();
 }
 
-function update(id, changes) {
-  return db('hubs')
+async function update(id, changes) {
+  myLogger([changes]);
+  await db('hubs')
     .where({ id })
     .update(changes, '*');
+
+  return findById(id);
 }
 
 function findHubMessages(hubId) {

@@ -31,7 +31,7 @@ router.get('/:id', validateId, (req, res) => {
   res.status(200).json(req.hub);
 });
 
-router.post('/', (req, res) => {
+router.post('/', requiredBody, (req, res) => {
   Hubs.add(req.body)
   .then(hub => {
     res.status(201).json(hub);
@@ -63,14 +63,10 @@ router.delete('/:id', validateId, (req, res) => {
   });
 });
 
-router.put('/:id', validateId, (req, res) => {
+router.put('/:id', validateId, requiredBody, (req, res) => {
   Hubs.update(req.params.id, req.body)
   .then(hub => {
-    if (hub) {
-      res.status(200).json(hub);
-    } else {
-      res.status(404).json({ message: 'The hub could not be found' });
-    }
+    res.status(200).json(hub);
   })
   .catch(error => {
     // log error to server
@@ -98,7 +94,7 @@ router.get('/:id/messages', validateId, (req, res) => {
 });
 
 // add an endpoint for adding new message to a hub
-router.post('/:id/messages', validateId, (req, res) => {
+router.post('/:id/messages', validateBody, validateId, (req, res) => {
   const messageInfo = { ...req.body, hub_id: req.params.id };
 
   Messages.add(messageInfo)
@@ -132,9 +128,22 @@ async function validateId(req, res, next) {
 
 function requiredBody(req, res, next) {
   // we want the body defined and not an empty object
-  // otherwise respond with tstatus 400 and a useful message;
-  if (req.body) {
-    
+  // otherwise respond with status 400 and a useful message;
+  if (Object.keys(req.body).length === 0) {
+    return res.status(400).json({ message: 'Request body cannot be empty' })
+  }
+
+  next();
+}
+
+function validateBody(req, res, next) {
+  // This is just a another way of implementing the 'requiredBody' middleware
+  if (req.body && Object.keys(req.body).length !== 0) {
+    // go on to the next bit of middleware
+    next();
+  } else {
+    // jump to an error handler bit of middleware - the middleware just before module.exports in server.js
+    next({ message: "Please include a request body" })
   }
 }
 
